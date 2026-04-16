@@ -276,16 +276,45 @@ def render():
     st.markdown(
         """
         <style>
-            .stApp {background: linear-gradient(135deg, #f8fbff 0%, #f3efff 40%, #e9fff7 100%);} 
-            .block-container {padding-top: 1.2rem;}
-            h1, h2, h3 {color: #2D1B69;}
-            [data-testid="stSidebar"] {background: linear-gradient(180deg, #2D1B69 0%, #4D2BA7 100%);} 
-            [data-testid="stSidebar"] * {color: #ffffff !important;}
+            .stApp {
+                background: linear-gradient(135deg, #f6fbff 0%, #f4f8ff 45%, #eefdf8 100%);
+                color: #12263a;
+            }
+            .block-container {
+                padding-top: 2.8rem;
+                padding-bottom: 1.5rem;
+            }
+            h1, h2, h3, p, label, .stCaption {
+                color: #12263a !important;
+            }
+            [data-testid="stSidebar"] {
+                background: linear-gradient(180deg, #2b2d8f 0%, #4b4fd1 100%);
+            }
+            [data-testid="stSidebar"] * {
+                color: #ffffff !important;
+            }
+            .stTextInput input, .stTextArea textarea, .stMultiSelect [data-baseweb="select"], .stNumberInput input {
+                background-color: #ffffff !important;
+                color: #12263a !important;
+                border: 1px solid #cfd9e6 !important;
+            }
+            .stSlider [data-baseweb="slider"] {
+                padding-top: 0.75rem;
+            }
+            [data-baseweb="tag"] {
+                background: #ff5b61 !important;
+                color: #ffffff !important;
+            }
+            .stButton > button {
+                border-radius: 10px;
+                font-weight: 600;
+            }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+    st.markdown("<div style='height: 0.4rem;'></div>", unsafe_allow_html=True)
     st.title("🚀 Performance Audit Studio")
     st.caption("Sitemap-driven PageSpeed Insights auditing with customizable report controls.")
 
