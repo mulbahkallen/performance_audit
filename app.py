@@ -1066,5 +1066,18 @@ def render():
         render_schema_tab()
 
 
+def render():
+    st.set_page_config(page_title="Performance Audit Studio", page_icon="🚀", layout="wide")
+    apply_base_styles()
+    init_ui_state()
+    render_header()
+
+    performance_tab_container, schema_tab_container = st.tabs(["Performance Audit", "Schema Doc Generator"])
+    with performance_tab_container:
+        render_performance_tab()
+    with schema_tab_container:
+        render_schema_tab()
+
+
 if __name__ == "__main__":
     render()
