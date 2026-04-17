@@ -952,56 +952,7 @@ def render_performance_tab():
 
 
 def render_schema_tab():
-    st.subheader("AI Schema Doc Generator")
-    st.caption("Discovers sitemap URLs, generates sanitized JSON-LD per page, and downloads schema/error JSON files in a ZIP.")
-    schema_root = st.text_input("Root website for schema generation", placeholder="https://example.com", key="schema_root")
-    schema_openai_key = st.text_input("OpenAI API Key", value="", type="password", key="schema_key")
-    s1, s2, s3, s4 = st.columns(4)
-    schema_model = s1.text_input("Model", value="gpt-5-mini", key="schema_model")
-    schema_max_urls = s2.number_input("Max URLs", min_value=1, max_value=1000, value=50, step=1, key="schema_max_urls")
-    schema_pause = s3.number_input("Pause between requests (sec)", min_value=0.0, max_value=10.0, value=0.5, step=0.1, key="schema_pause")
-    schema_retries = s4.number_input("Retries per URL", min_value=1, max_value=6, value=3, step=1, key="schema_retries")
-    schema_timeout = st.slider("Request timeout (seconds)", min_value=10, max_value=180, value=60, step=5, key="schema_timeout")
-
-    run_schema = st.button("🧩 Generate Schema JSON ZIP", type="primary", use_container_width=True, key="run_schema")
-    if run_schema:
-        if not schema_openai_key.strip():
-            st.error("OpenAI API key is required. Please paste your key to run schema generation.")
-            return
-        try:
-            normalized_root = normalize_base_url(schema_root)
-        except ValueError as err:
-            st.error(str(err))
-            return
-
-        schema_progress = st.progress(0.0, text="Preparing schema generation...")
-        with st.spinner("Generating schema JSON files. This may take a while for many URLs."):
-            zip_bytes, summary = generate_schema_json_zip(
-                root_site=normalized_root,
-                openai_api_key=schema_openai_key.strip(),
-                model=schema_model.strip() or "gpt-5-mini",
-                timeout_seconds=int(schema_timeout),
-                max_urls=int(schema_max_urls),
-                pause_seconds=float(schema_pause),
-                max_retries=int(schema_retries),
-                progress_placeholder=schema_progress,
-            )
-
-        k1, k2, k3, k4 = st.columns(4)
-        k1.metric("URLs Processed", summary["total_urls"])
-        k2.metric("Success", summary["succeeded"])
-        k3.metric("Cached", summary["cached"])
-        k4.metric("Failed", summary["failed"])
-
-        stamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        st.download_button(
-            "⬇️ Download schema_json.zip",
-            data=zip_bytes,
-            file_name=f"schema_json_{stamp}.zip",
-            mime="application/zip",
-            use_container_width=True,
-        )
-
+    schema_tab = st.container()
     with schema_tab:
         st.subheader("AI Schema Doc Generator")
         st.caption("Discovers sitemap URLs, generates sanitized JSON-LD per page, and downloads schema/error JSON files in a ZIP.")
@@ -1012,6 +963,7 @@ def render_schema_tab():
         schema_max_urls = s2.number_input("Max URLs", min_value=1, max_value=1000, value=50, step=1, key="schema_max_urls")
         schema_pause = s3.number_input("Pause between requests (sec)", min_value=0.0, max_value=10.0, value=0.5, step=0.1, key="schema_pause")
         schema_retries = s4.number_input("Retries per URL", min_value=1, max_value=6, value=3, step=1, key="schema_retries")
+        schema_timeout = st.slider("Request timeout (seconds)", min_value=10, max_value=180, value=60, step=5, key="schema_timeout")
 
         run_schema = st.button("🧩 Generate Schema JSON ZIP", type="primary", use_container_width=True, key="run_schema")
         if run_schema:
@@ -1030,7 +982,7 @@ def render_schema_tab():
                     root_site=normalized_root,
                     openai_api_key=schema_openai_key.strip(),
                     model=schema_model.strip() or "gpt-5-mini",
-                    timeout_seconds=timeout_seconds,
+                    timeout_seconds=int(schema_timeout),
                     max_urls=int(schema_max_urls),
                     pause_seconds=float(schema_pause),
                     max_retries=int(schema_retries),
@@ -1051,19 +1003,6 @@ def render_schema_tab():
                 mime="application/zip",
                 use_container_width=True,
             )
-
-
-def render():
-    st.set_page_config(page_title="Performance Audit Studio", page_icon="🚀", layout="wide")
-    apply_base_styles()
-    init_ui_state()
-    render_header()
-
-    performance_tab, schema_tab = st.tabs(["Performance Audit", "Schema Doc Generator"])
-    with performance_tab:
-        render_performance_tab()
-    with schema_tab:
-        render_schema_tab()
 
 
 def render():
