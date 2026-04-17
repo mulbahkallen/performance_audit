@@ -714,8 +714,9 @@ def render():
                 --mp-sky: #A5D4EF;
                 --mp-dim: #2E3D3C;
                 --mp-alabaster: #F2F3EC;
-                --mp-black: #000000;
                 --mp-white: #FFFFFF;
+                --mp-sea: #77BFD8;
+                --mp-mint: #8BCFB2;
             }
             .stApp {
                 font-family: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -724,17 +725,17 @@ def render():
             }
             .block-container {
                 max-width: 1200px;
-                padding-top: 2.2rem;
+                padding-top: 4.5rem;
                 padding-bottom: 1.5rem;
             }
             h1, h2, h3 {
                 font-family: "Work Sans", sans-serif;
-                color: var(--mp-black) !important;
+                color: var(--mp-dim) !important;
                 letter-spacing: 0.01em;
             }
             [data-testid="stSidebar"] {
-                background: linear-gradient(180deg, #111716 0%, #2E3D3C 70%, #3C524F 100%);
-                border-right: 3px solid var(--mp-pistachio);
+                background: linear-gradient(180deg, #315E5A 0%, #4D8D91 45%, #8CBFC9 100%);
+                border-right: 3px solid var(--mp-sky);
             }
             [data-testid="stSidebar"] * {
                 color: var(--mp-white) !important;
@@ -744,6 +745,12 @@ def render():
                 color: var(--mp-dim) !important;
                 border: 1px solid #C4C8C0 !important;
                 border-radius: 10px !important;
+                caret-color: #2B8E9C !important;
+            }
+            .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
+                border: 1px solid #2B8E9C !important;
+                box-shadow: 0 0 0 3px rgba(165, 212, 239, 0.55) !important;
+                outline: none !important;
             }
             [data-baseweb="tab-list"] {
                 gap: 0.5rem;
@@ -758,26 +765,27 @@ def render():
             }
             [aria-selected="true"][data-baseweb="tab"] {
                 background: var(--mp-pistachio) !important;
-                color: var(--mp-black) !important;
+                color: var(--mp-dim) !important;
             }
             [data-baseweb="tag"] {
                 background: var(--mp-sky) !important;
-                color: var(--mp-black) !important;
+                color: var(--mp-dim) !important;
             }
             .stButton > button, .stDownloadButton > button {
                 border-radius: 10px;
                 font-weight: 600;
-                border: 1px solid #1F2B2A !important;
-                background: var(--mp-black) !important;
-                color: var(--mp-white) !important;
+                border: 1px solid #5D9FA7 !important;
+                background: linear-gradient(90deg, var(--mp-pistachio) 0%, var(--mp-sky) 100%) !important;
+                color: var(--mp-dim) !important;
                 transition: all .15s ease-in-out;
             }
             .stButton > button:hover, .stDownloadButton > button:hover {
-                border-color: var(--mp-pistachio) !important;
-                box-shadow: 0 0 0 2px rgba(181, 217, 148, 0.35);
+                border-color: #74B3C0 !important;
+                background: linear-gradient(90deg, var(--mp-mint) 0%, var(--mp-sea) 100%) !important;
+                box-shadow: 0 0 0 2px rgba(119, 191, 216, 0.35);
             }
             [data-testid="stMetricValue"] {
-                color: var(--mp-black) !important;
+                color: var(--mp-dim) !important;
                 font-weight: 700;
             }
             .mp-brand-card {
