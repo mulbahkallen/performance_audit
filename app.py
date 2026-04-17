@@ -776,7 +776,7 @@ def render_header():
         <div class="mp-brand-card">
           <div class="mp-kicker">Modern Practice • Performance & Schema Intelligence</div>
           <h1 style="margin:0; font-size: 2rem;">Performance Audit Studio</h1>
-          <p style="margin: .45rem 0 0 0; font-size: 1rem;">Sitemap-driven PageSpeed audits and AI schema generation in one branded workspace.</p>
+          <p style="margin: .45rem 0 0 0; font-size: 1rem;">Sitemap-driven PageSpeed audits and AI schema generation in one workspace.</p>
         </div>
         """,
         unsafe_allow_html=True,
