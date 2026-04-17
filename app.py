@@ -705,38 +705,95 @@ def render():
 
     st.markdown(
         """
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <style>
+            :root {
+                --mp-pistachio: #B5D994;
+                --mp-sky: #A5D4EF;
+                --mp-dim: #2E3D3C;
+                --mp-alabaster: #F2F3EC;
+                --mp-black: #000000;
+                --mp-white: #FFFFFF;
+            }
             .stApp {
-                background: linear-gradient(135deg, #f6fbff 0%, #f4f8ff 45%, #eefdf8 100%);
-                color: #12263a;
+                font-family: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                background: var(--mp-alabaster);
+                color: var(--mp-dim);
             }
             .block-container {
-                padding-top: 2.8rem;
+                max-width: 1200px;
+                padding-top: 2.2rem;
                 padding-bottom: 1.5rem;
             }
-            h1, h2, h3, p, label, .stCaption {
-                color: #12263a !important;
+            h1, h2, h3 {
+                font-family: "Work Sans", sans-serif;
+                color: var(--mp-black) !important;
+                letter-spacing: 0.01em;
             }
             [data-testid="stSidebar"] {
-                background: linear-gradient(180deg, #2b2d8f 0%, #4b4fd1 100%);
+                background: linear-gradient(180deg, #111716 0%, #2E3D3C 70%, #3C524F 100%);
+                border-right: 3px solid var(--mp-pistachio);
             }
             [data-testid="stSidebar"] * {
-                color: #ffffff !important;
+                color: var(--mp-white) !important;
             }
             .stTextInput input, .stTextArea textarea, .stMultiSelect [data-baseweb="select"], .stNumberInput input {
-                background-color: #ffffff !important;
-                color: #12263a !important;
-                border: 1px solid #cfd9e6 !important;
+                background-color: var(--mp-white) !important;
+                color: var(--mp-dim) !important;
+                border: 1px solid #C4C8C0 !important;
+                border-radius: 10px !important;
             }
-            .stSlider [data-baseweb="slider"] {
-                padding-top: 0.75rem;
+            [data-baseweb="tab-list"] {
+                gap: 0.5rem;
+                background: transparent;
+                border-bottom: 1px solid #CFCFC7;
+            }
+            [data-baseweb="tab"] {
+                background: #E8EAE2 !important;
+                border-radius: 8px 8px 0 0 !important;
+                color: var(--mp-dim) !important;
+                font-weight: 600 !important;
+            }
+            [aria-selected="true"][data-baseweb="tab"] {
+                background: var(--mp-pistachio) !important;
+                color: var(--mp-black) !important;
             }
             [data-baseweb="tag"] {
-                background: #ff5b61 !important;
-                color: #ffffff !important;
+                background: var(--mp-sky) !important;
+                color: var(--mp-black) !important;
             }
-            .stButton > button {
+            .stButton > button, .stDownloadButton > button {
                 border-radius: 10px;
+                font-weight: 600;
+                border: 1px solid #1F2B2A !important;
+                background: var(--mp-black) !important;
+                color: var(--mp-white) !important;
+                transition: all .15s ease-in-out;
+            }
+            .stButton > button:hover, .stDownloadButton > button:hover {
+                border-color: var(--mp-pistachio) !important;
+                box-shadow: 0 0 0 2px rgba(181, 217, 148, 0.35);
+            }
+            [data-testid="stMetricValue"] {
+                color: var(--mp-black) !important;
+                font-weight: 700;
+            }
+            .mp-brand-card {
+                border: 1px solid #CBD0C7;
+                border-left: 6px solid var(--mp-pistachio);
+                border-radius: 12px;
+                padding: 1rem 1.2rem;
+                margin-bottom: 1rem;
+                background: linear-gradient(90deg, rgba(165,212,239,.35) 0%, rgba(242,243,236,1) 35%);
+            }
+            .mp-kicker {
+                text-transform: uppercase;
+                letter-spacing: .16em;
+                font-size: 0.74rem;
+                color: var(--mp-dim);
+                margin-bottom: 0.35rem;
                 font-weight: 600;
             }
         </style>
@@ -744,9 +801,16 @@ def render():
         unsafe_allow_html=True,
     )
 
-    st.markdown("<div style='height: 0.4rem;'></div>", unsafe_allow_html=True)
-    st.title("🚀 Performance Audit Studio")
-    st.caption("Sitemap-driven PageSpeed Insights auditing with customizable report controls.")
+    st.markdown(
+        """
+        <div class="mp-brand-card">
+          <div class="mp-kicker">Modern Practice • Performance & Schema Intelligence</div>
+          <h1 style="margin:0; font-size: 2rem;">Performance Audit Studio</h1>
+          <p style="margin: .45rem 0 0 0; font-size: 1rem;">Sitemap-driven PageSpeed audits and AI schema generation in one branded workspace.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     with st.expander("API capabilities used in this app", expanded=False):
         st.markdown(
