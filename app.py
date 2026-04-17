@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
+import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
@@ -864,22 +865,314 @@ def render_performance_controls() -> Tuple[bool, Dict]:
     return run_clicked, params
 
 
-def render_performance_results(filtered: pd.DataFrame, timestamp: str):
+def prepare_dashboard_data(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out["error_flag"] = out.get("error", pd.Series([None] * len(out))).notna()
+    score = pd.to_numeric(out.get("performance_score"), errors="coerce")
+    out["performance_score"] = score
+    out["score_bucket"] = pd.cut(
+        score,
+        bins=[-1, 49, 89, 100],
+        labels=["Red (0-49)", "Orange (50-89)", "Green (90-100)"],
+    ).astype("string")
+    out["score_bucket"] = out["score_bucket"].fillna("Unknown")
+
+    def _path_segment(url: str) -> str:
+        parsed = urllib.parse.urlparse(str(url))
+        parts = [p for p in parsed.path.split("/") if p]
+        return parts[0] if parts else "home"
+
+    out["path_segment"] = out.get("url_requested", pd.Series([""] * len(out))).apply(_path_segment)
+    return out
+
+
+def render_dashboard_toolbar(df: pd.DataFrame) -> pd.DataFrame:
+    st.markdown("### Dashboard Toolbar")
+    t1, t2, t3, t4, t5 = st.columns([1.1, 1.1, 1.1, 1.1, 1.2])
+    sort_by = t1.selectbox("Sort by", ["performance_score", "lcp_seconds", "tbt_ms", "cls", "url_requested"], key="dash_sort_by")
+    metric_focus = t2.selectbox("Metric Focus", ["Performance", "LCP", "TBT", "CLS"], key="dash_metric_focus")
+    strategy_options = ["All"] + sorted([s for s in df.get("strategy", pd.Series([])).dropna().unique().tolist()])
+    strategy_filter = t3.selectbox("Strategy", strategy_options, key="dash_strategy_filter")
+    score_bucket_filter = t4.selectbox("Score Bucket", ["All", "Green (90-100)", "Orange (50-89)", "Red (0-49)", "Unknown"], key="dash_bucket_filter")
+    problems_only = t5.toggle("Show only problem pages", key="dash_problems_only")
+
+    filtered = df.copy()
+    if strategy_filter != "All" and "strategy" in filtered.columns:
+        filtered = filtered[filtered["strategy"] == strategy_filter]
+    if score_bucket_filter != "All":
+        filtered = filtered[filtered["score_bucket"] == score_bucket_filter]
+    if problems_only:
+        filtered = filtered[
+            filtered["error_flag"]
+            | (pd.to_numeric(filtered.get("lcp_seconds"), errors="coerce") > 2.5)
+            | (pd.to_numeric(filtered.get("cls"), errors="coerce") > 0.10)
+            | (pd.to_numeric(filtered.get("tbt_ms"), errors="coerce") > 200)
+            | (pd.to_numeric(filtered.get("performance_score"), errors="coerce") < 50)
+        ]
+
+    ascending = sort_by in {"performance_score"}
+    if sort_by in filtered.columns:
+        filtered = filtered.sort_values(sort_by, ascending=ascending, na_position="last")
+    st.caption(f"Metric focus: **{metric_focus}**")
+    return filtered
+
+
+def render_audit_summary(df: pd.DataFrame):
     st.subheader("Audit Summary")
-    k1, k2, k3 = st.columns(3)
-    k1.metric("Rows", len(filtered))
-    k2.metric("Avg Performance", round(filtered["performance_score"].dropna().mean(), 1) if "performance_score" in filtered else "n/a")
-    k3.metric("Errors", int(filtered["error"].notna().sum() if "error" in filtered.columns else 0))
+    score = pd.to_numeric(df.get("performance_score"), errors="coerce")
+    lcp = pd.to_numeric(df.get("lcp_seconds"), errors="coerce")
+    cls = pd.to_numeric(df.get("cls"), errors="coerce")
+    error_count = int(df.get("error_flag", pd.Series([False] * len(df))).sum())
 
-    st.subheader("Audit Results")
-    st.dataframe(filtered, use_container_width=True, height=500)
+    green = int((score >= 90).sum())
+    orange = int(((score >= 50) & (score < 90)).sum())
+    red = int((score < 50).sum())
 
+    cards = st.columns(9)
+    cards[0].metric("URLs Audited", len(df))
+    cards[1].metric("Avg Perf", round(score.mean(), 1) if score.notna().any() else "n/a")
+    cards[2].metric("Median Perf", round(score.median(), 1) if score.notna().any() else "n/a")
+    cards[3].metric("Green Zone (90+)", green)
+    cards[4].metric("Orange (50-89)", orange)
+    cards[5].metric("Red (<50)", red)
+    cards[6].metric("Avg LCP", round(lcp.mean(), 2) if lcp.notna().any() else "n/a")
+    cards[7].metric("Avg CLS", round(cls.mean(), 3) if cls.notna().any() else "n/a")
+    cards[8].metric("Error Count", error_count)
+
+
+def render_score_overview(df: pd.DataFrame):
+    st.subheader("Score Overview")
+    numeric_df = df[~df["error_flag"]].copy()
+    if numeric_df.empty:
+        st.info("No successful rows available for score overview charts.")
+        return
+
+    c1, c2 = st.columns(2)
+    hist = (
+        alt.Chart(numeric_df)
+        .mark_bar(color="#77BFD8")
+        .encode(x=alt.X("performance_score:Q", bin=alt.Bin(maxbins=20), title="Performance Score"), y=alt.Y("count():Q", title="Pages"))
+        .properties(height=280, title="Performance Score Distribution")
+    )
+    c1.altair_chart(hist, use_container_width=True)
+
+    buckets = numeric_df.groupby("score_bucket", dropna=False).size().reset_index(name="count")
+    bucket_chart = (
+        alt.Chart(buckets)
+        .mark_bar()
+        .encode(
+            x=alt.X("score_bucket:N", title="Score Bucket", sort=["Red (0-49)", "Orange (50-89)", "Green (90-100)", "Unknown"]),
+            y=alt.Y("count:Q", title="Pages"),
+            color=alt.Color("score_bucket:N", scale=alt.Scale(domain=["Red (0-49)", "Orange (50-89)", "Green (90-100)", "Unknown"], range=["#E88B8B", "#EFC78A", "#B5D994", "#CFD6CC"])),
+        )
+        .properties(height=280, title="Performance Score Buckets")
+    )
+    c2.altair_chart(bucket_chart, use_container_width=True)
+
+    avg_values = pd.DataFrame(
+        {
+            "category": ["Performance", "Accessibility", "Best Practices", "SEO"],
+            "avg_score": [
+                pd.to_numeric(numeric_df.get("performance_score"), errors="coerce").mean(),
+                pd.to_numeric(numeric_df.get("accessibility_score"), errors="coerce").mean(),
+                pd.to_numeric(numeric_df.get("best_practices_score"), errors="coerce").mean(),
+                pd.to_numeric(numeric_df.get("seo_score"), errors="coerce").mean(),
+            ],
+        }
+    ).dropna()
+    cat_chart = (
+        alt.Chart(avg_values)
+        .mark_bar(color="#8BCFB2")
+        .encode(x=alt.X("category:N", title="Category"), y=alt.Y("avg_score:Q", title="Average Score"))
+        .properties(height=320, title="Category Average Scores")
+    )
+    st.altair_chart(cat_chart, use_container_width=True)
+
+
+def _top_n_chart(df: pd.DataFrame, metric_col: str, title: str, n: int = 10):
+    if metric_col not in df.columns:
+        st.info(f"{title}: metric unavailable.")
+        return
+    sample = df[~df["error_flag"]][["url_requested", metric_col]].copy()
+    sample[metric_col] = pd.to_numeric(sample[metric_col], errors="coerce")
+    sample = sample.dropna().sort_values(metric_col, ascending=False).head(n)
+    if sample.empty:
+        st.info(f"{title}: no data.")
+        return
+    chart = (
+        alt.Chart(sample)
+        .mark_bar(color="#A5D4EF")
+        .encode(
+            x=alt.X(f"{metric_col}:Q", title=metric_col.replace("_", " ").upper()),
+            y=alt.Y("url_requested:N", sort="-x", title="URL"),
+            tooltip=["url_requested", metric_col],
+        )
+        .properties(height=320, title=title)
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+
+def render_core_metrics(df: pd.DataFrame):
+    st.subheader("Core Performance Metrics")
+    c1, c2 = st.columns(2)
+    with c1:
+        _top_n_chart(df, "lcp_seconds", "Top 10 Slowest Pages by LCP")
+    with c2:
+        _top_n_chart(df, "tbt_ms", "Top 10 Highest TBT Pages")
+    _top_n_chart(df, "cls", "Top 10 Worst CLS Pages")
+
+    numeric = df[~df["error_flag"]].copy()
+    if {"performance_score", "lcp_seconds"}.issubset(numeric.columns):
+        s1, s2 = st.columns(2)
+        scatter_lcp = (
+            alt.Chart(numeric.dropna(subset=["performance_score", "lcp_seconds"]))
+            .mark_circle(size=70, color="#77BFD8")
+            .encode(
+                x=alt.X("lcp_seconds:Q", title="LCP (seconds)"),
+                y=alt.Y("performance_score:Q", title="Performance Score"),
+                tooltip=["url_requested", "strategy", "performance_score", "lcp_seconds"],
+            )
+            .properties(height=300, title="Performance Score vs LCP")
+        )
+        s1.altair_chart(scatter_lcp, use_container_width=True)
+        if "tbt_ms" in numeric.columns:
+            scatter_tbt = (
+                alt.Chart(numeric.dropna(subset=["performance_score", "tbt_ms"]))
+                .mark_circle(size=70, color="#8BCFB2")
+                .encode(
+                    x=alt.X("tbt_ms:Q", title="TBT (ms)"),
+                    y=alt.Y("performance_score:Q", title="Performance Score"),
+                    tooltip=["url_requested", "strategy", "performance_score", "tbt_ms"],
+                )
+                .properties(height=300, title="Performance Score vs TBT")
+            )
+            s2.altair_chart(scatter_tbt, use_container_width=True)
+
+
+def render_strategy_comparison(df: pd.DataFrame):
+    strategies = sorted(df.get("strategy", pd.Series([])).dropna().unique().tolist())
+    if not {"mobile", "desktop"}.issubset(set(strategies)):
+        return
+    st.subheader("Strategy Comparison")
+    numeric = df[~df["error_flag"]].copy()
+    agg = (
+        numeric.groupby("strategy", dropna=False)[["performance_score", "lcp_seconds", "tbt_ms", "cls"]]
+        .mean(numeric_only=True)
+        .reset_index()
+        .round(2)
+    )
+    st.dataframe(agg, use_container_width=True, hide_index=True)
+    melt = agg.melt(id_vars="strategy", value_vars=["performance_score", "lcp_seconds", "tbt_ms", "cls"], var_name="metric", value_name="value")
+    chart = (
+        alt.Chart(melt)
+        .mark_bar()
+        .encode(x="metric:N", y="value:Q", color="strategy:N", xOffset="strategy:N", tooltip=["strategy", "metric", "value"])
+        .properties(height=300, title="Average Metrics by Strategy")
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+
+def render_url_insights(df: pd.DataFrame):
+    st.subheader("URL Insights")
+    urls = sorted(df.get("url_requested", pd.Series([])).dropna().unique().tolist())
+    if not urls:
+        st.info("No URLs available.")
+        return
+    search = st.text_input("Search URL", key="dash_url_search", placeholder="Type part of a URL")
+    if search:
+        urls = [u for u in urls if search.lower() in u.lower()]
+    selected = st.selectbox("Select URL", urls, key="dash_url_select")
+    page_rows = df[df["url_requested"] == selected].copy()
+    if page_rows.empty:
+        return
+    row = page_rows.iloc[0]
+    score = pd.to_numeric(pd.Series([row.get("performance_score")]), errors="coerce").iloc[0]
+    status = "Strong" if pd.notna(score) and score >= 90 else "Needs Improvement" if pd.notna(score) and score >= 50 else "Critical"
+
+    st.markdown(f"**Status:** `{status}`")
+    metrics = ["performance_score", "accessibility_score", "best_practices_score", "seo_score", "lcp_seconds", "cls", "tbt_ms", "fcp_seconds", "speed_index_seconds", "tti_seconds", "inp_ms_lab"]
+    details = {m: row.get(m) for m in metrics if m in row.index}
+    details["strategy"] = row.get("strategy")
+    details["url_final"] = row.get("url_final")
+    st.json(details)
+
+
+def render_problem_pages(df: pd.DataFrame):
+    st.subheader("Problem Pages")
+    base = df.copy()
+    base["lcp_fail"] = pd.to_numeric(base.get("lcp_seconds"), errors="coerce") > 2.5
+    base["cls_fail"] = pd.to_numeric(base.get("cls"), errors="coerce") > 0.10
+    base["tbt_fail"] = pd.to_numeric(base.get("tbt_ms"), errors="coerce") > 200
+
+    st.markdown("**Worst Performing Pages**")
+    worst = base.sort_values("performance_score", ascending=True, na_position="last").head(10)
+    st.dataframe(worst[["url_requested", "strategy", "performance_score", "lcp_seconds", "cls", "tbt_ms", "error"]], use_container_width=True, hide_index=True)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Pages with Errors**")
+        errors = base[base["error_flag"]]
+        st.dataframe(errors[["url_requested", "strategy", "error"]], use_container_width=True, hide_index=True)
+    with c2:
+        st.markdown("**Threshold Failures**")
+        st.write(f"LCP > 2.5s: **{int(base['lcp_fail'].sum())}**")
+        st.write(f"CLS > 0.10: **{int(base['cls_fail'].sum())}**")
+        st.write(f"TBT > 200ms: **{int(base['tbt_fail'].sum())}**")
+
+    f1, f2, f3 = st.columns(3)
+    f1.dataframe(base[base["lcp_fail"]][["url_requested", "strategy", "lcp_seconds"]], use_container_width=True, hide_index=True)
+    f2.dataframe(base[base["cls_fail"]][["url_requested", "strategy", "cls"]], use_container_width=True, hide_index=True)
+    f3.dataframe(base[base["tbt_fail"]][["url_requested", "strategy", "tbt_ms"]], use_container_width=True, hide_index=True)
+
+
+def render_quick_insights(df: pd.DataFrame):
+    st.subheader("Quick Insights")
+    notes = []
+    counts = df["score_bucket"].value_counts()
+    if not counts.empty:
+        notes.append(f"Most audited pages fall in **{counts.idxmax()}**.")
+    metric_means = {
+        "LCP": pd.to_numeric(df.get("lcp_seconds"), errors="coerce").mean(),
+        "TBT": pd.to_numeric(df.get("tbt_ms"), errors="coerce").mean(),
+        "CLS": pd.to_numeric(df.get("cls"), errors="coerce").mean(),
+    }
+    if pd.notna(metric_means["LCP"]) and metric_means["LCP"] > 2.5:
+        notes.append("**LCP** is above the recommended threshold on average.")
+    if {"mobile", "desktop"}.issubset(set(df.get("strategy", pd.Series([])).dropna().unique())):
+        perf_by_strategy = df.groupby("strategy")["performance_score"].mean()
+        if "mobile" in perf_by_strategy and "desktop" in perf_by_strategy and perf_by_strategy["mobile"] < perf_by_strategy["desktop"]:
+            notes.append("Mobile scores are materially worse than desktop.")
+    seg = df.groupby("path_segment")["performance_score"].mean().dropna().sort_values()
+    if not seg.empty:
+        notes.append(f"Weakest path segment is **/{seg.index[0]}** (avg score {seg.iloc[0]:.1f}).")
+    for note in notes[:4]:
+        st.write(f"- {note}")
+
+
+def render_downloads(df: pd.DataFrame, timestamp: str):
     st.subheader("Downloads")
-    csv_bytes = filtered.to_csv(index=False).encode("utf-8")
-    json_bytes = filtered.to_json(orient="records", indent=2).encode("utf-8")
+    csv_bytes = df.to_csv(index=False).encode("utf-8")
+    json_bytes = df.to_json(orient="records", indent=2).encode("utf-8")
     d1, d2 = st.columns(2)
     d1.download_button("⬇️ Download CSV report", data=csv_bytes, file_name=f"psi_audit_{timestamp}.csv", mime="text/csv", use_container_width=True)
     d2.download_button("⬇️ Download JSON report", data=json_bytes, file_name=f"psi_audit_{timestamp}.json", mime="application/json", use_container_width=True)
+
+
+def render_performance_results(filtered: pd.DataFrame, timestamp: str):
+    dashboard_df = prepare_dashboard_data(filtered)
+    dashboard_df = render_dashboard_toolbar(dashboard_df)
+
+    render_audit_summary(dashboard_df)
+    render_score_overview(dashboard_df)
+    render_core_metrics(dashboard_df)
+    render_strategy_comparison(dashboard_df)
+    render_url_insights(dashboard_df)
+    render_problem_pages(dashboard_df)
+    render_quick_insights(dashboard_df)
+
+    st.subheader("Full Results")
+    st.dataframe(dashboard_df, use_container_width=True, height=500)
+    render_downloads(dashboard_df, timestamp)
 
 
 def run_performance_audit_workflow(params: Dict):
@@ -949,6 +1242,8 @@ def render_performance_tab():
         run_performance_audit_workflow(params)
     elif "perf_last_filtered" in st.session_state:
         render_performance_results(st.session_state["perf_last_filtered"], st.session_state.get("perf_last_timestamp", datetime.utcnow().strftime("%Y%m%d_%H%M%S")))
+    else:
+        st.info("Configure **Audit Setup** and click **Run Audit** to generate a performance dashboard.")
 
 
 def render_schema_tab():
