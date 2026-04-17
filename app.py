@@ -700,9 +700,7 @@ def generate_schema_json_zip(
     return output_buffer.getvalue(), summary_payload
 
 
-def render():
-    st.set_page_config(page_title="Performance Audit Studio", page_icon="🚀", layout="wide")
-
+def apply_base_styles():
     st.markdown(
         """
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -723,23 +721,8 @@ def render():
                 background: var(--mp-alabaster);
                 color: var(--mp-dim);
             }
-            .block-container {
-                max-width: 1200px;
-                padding-top: 4.5rem;
-                padding-bottom: 1.5rem;
-            }
-            h1, h2, h3 {
-                font-family: "Work Sans", sans-serif;
-                color: var(--mp-dim) !important;
-                letter-spacing: 0.01em;
-            }
-            [data-testid="stSidebar"] {
-                background: linear-gradient(180deg, #315E5A 0%, #4D8D91 45%, #8CBFC9 100%);
-                border-right: 3px solid var(--mp-sky);
-            }
-            [data-testid="stSidebar"] * {
-                color: var(--mp-white) !important;
-            }
+            .block-container { max-width: 1200px; padding-top: 4.5rem; padding-bottom: 1.5rem; }
+            h1, h2, h3 { font-family: "Work Sans", sans-serif; color: var(--mp-dim) !important; letter-spacing: 0.01em; }
             .stTextInput input, .stTextArea textarea, .stMultiSelect [data-baseweb="select"], .stNumberInput input {
                 background-color: var(--mp-white) !important;
                 color: var(--mp-dim) !important;
@@ -752,74 +735,51 @@ def render():
                 box-shadow: 0 0 0 3px rgba(165, 212, 239, 0.55) !important;
                 outline: none !important;
             }
-            [data-baseweb="tab-list"] {
-                gap: 0.5rem;
-                background: transparent;
-                border-bottom: 1px solid #CFCFC7;
-            }
+            [data-baseweb="tab-list"] { gap: 0.5rem; background: transparent; border-bottom: 1px solid #CFCFC7; }
             [data-baseweb="tab"] {
                 background: #E8EAE2 !important;
                 border-radius: 8px 8px 0 0 !important;
                 color: var(--mp-dim) !important;
                 font-weight: 600 !important;
             }
-            [aria-selected="true"][data-baseweb="tab"] {
-                background: var(--mp-pistachio) !important;
-                color: var(--mp-dim) !important;
-            }
-            [data-baseweb="tag"] {
-                background: var(--mp-sky) !important;
-                color: var(--mp-dim) !important;
-            }
-            .stButton > button, .stDownloadButton > button {
-                border-radius: 10px;
-                font-weight: 600;
+            [aria-selected="true"][data-baseweb="tab"] { background: var(--mp-pistachio) !important; color: var(--mp-dim) !important; }
+            [data-baseweb="tag"] { background: var(--mp-sky) !important; color: var(--mp-dim) !important; }
+            .stButton > button, .stDownloadButton > button, div[data-testid="stFormSubmitButton"] > button {
+                border-radius: 10px; font-weight: 600;
                 border: 1px solid #5D9FA7 !important;
                 background: linear-gradient(90deg, var(--mp-pistachio) 0%, var(--mp-sky) 100%) !important;
-                color: var(--mp-dim) !important;
-                transition: all .15s ease-in-out;
+                color: var(--mp-dim) !important; transition: all .15s ease-in-out;
             }
-            .stButton > button:hover, .stDownloadButton > button:hover {
+            .stButton > button:hover, .stDownloadButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
                 border-color: #74B3C0 !important;
                 background: linear-gradient(90deg, var(--mp-mint) 0%, var(--mp-sea) 100%) !important;
                 box-shadow: 0 0 0 2px rgba(119, 191, 216, 0.35);
             }
-            [data-testid="stMetricValue"] {
-                color: var(--mp-dim) !important;
-                font-weight: 700;
-            }
+            [data-testid="stMetricValue"] { color: var(--mp-dim) !important; font-weight: 700; }
             .mp-brand-card {
-                border: 1px solid #CBD0C7;
-                border-left: 6px solid var(--mp-pistachio);
-                border-radius: 12px;
-                padding: 1rem 1.2rem;
-                margin-bottom: 1rem;
+                border: 1px solid #CBD0C7; border-left: 6px solid var(--mp-pistachio); border-radius: 12px;
+                padding: 1rem 1.2rem; margin-bottom: 1rem;
                 background: linear-gradient(90deg, rgba(165,212,239,.35) 0%, rgba(242,243,236,1) 35%);
             }
-            .mp-kicker {
-                text-transform: uppercase;
-                letter-spacing: .16em;
-                font-size: 0.74rem;
-                color: var(--mp-dim);
-                margin-bottom: 0.35rem;
-                font-weight: 600;
-            }
+            .mp-kicker { text-transform: uppercase; letter-spacing: .16em; font-size: 0.74rem; color: var(--mp-dim); margin-bottom: 0.35rem; font-weight: 600; }
+            .mp-section { background: rgba(255,255,255,0.55); border: 1px solid #CFD6CC; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
+
+def render_header():
     st.markdown(
         """
         <div class="mp-brand-card">
           <div class="mp-kicker">Modern Practice • Performance & Schema Intelligence</div>
           <h1 style="margin:0; font-size: 2rem;">Performance Audit Studio</h1>
-          <p style="margin: .45rem 0 0 0; font-size: 1rem;">Sitemap-driven PageSpeed audits and AI schema generation in one workspace.</p>
+          <p style="margin: .45rem 0 0 0; font-size: 1rem;">Sitemap-driven PageSpeed audits and AI schema generation in one branded workspace.</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
     with st.expander("API capabilities used in this app", expanded=False):
         st.markdown(
             """
@@ -829,127 +789,216 @@ def render():
             - `locale`: localization code for formatted output
             - `url`: page URL being audited
             - `key`: your API key (optional in UI, recommended for quota)
-
-            The report table is additionally customizable client-side with URL include/exclude patterns and performance score thresholds.
             """
         )
 
-    with st.sidebar:
-        st.header("⚙️ Audit Controls")
-        api_key = st.text_input("PageSpeed API Key", value=os.getenv("PSI_API_KEY", ""), type="password")
-        client_url = st.text_input("Client Website URL", placeholder="https://example.com")
 
-        strategies = st.multiselect("Device Strategy", ["mobile", "desktop"], default=["mobile"])
-        categories = st.multiselect(
-            "Lighthouse Categories",
-            ["performance", "accessibility", "best-practices", "seo"],
-            default=["performance", "accessibility", "best-practices", "seo"],
-        )
-        locale = st.text_input("Locale", value="en-US")
+def init_ui_state():
+    defaults = {
+        "perf_api_key": os.getenv("PSI_API_KEY", ""),
+        "perf_client_url": "",
+        "perf_strategies": ["mobile"],
+        "perf_categories": ["performance", "accessibility", "best-practices", "seo"],
+        "perf_locale": "en-US",
+        "perf_include_field_data": True,
+        "perf_sitemap_only": True,
+        "perf_max_urls": 50,
+        "perf_timeout_seconds": 60,
+        "perf_max_workers": 4,
+        "perf_retries": 2,
+        "perf_include_pattern": "",
+        "perf_exclude_pattern": "",
+        "perf_min_perf": 0,
+    }
+    for key, value in defaults.items():
+        st.session_state.setdefault(key, value)
 
-        include_field_data = st.toggle("Include CrUX field-data columns", value=True)
-        sitemap_only = st.toggle("Use sitemap URLs only (no fallback crawl)", value=True)
 
-        max_urls = st.slider("Max URLs to audit", min_value=5, max_value=500, value=50, step=5)
-        timeout_seconds = st.slider("Request timeout (seconds)", min_value=10, max_value=180, value=60, step=5)
-        max_workers = st.slider("Parallel workers", min_value=1, max_value=10, value=4)
-        retries = st.slider("Retries per request", min_value=1, max_value=5, value=2)
+def render_performance_controls() -> Tuple[bool, Dict]:
+    st.markdown("<div class='mp-section'>", unsafe_allow_html=True)
+    st.subheader("Audit Setup")
+    with st.form("performance_audit_form", clear_on_submit=False):
+        c1, c2 = st.columns(2)
+        c1.text_input("PageSpeed API Key", key="perf_api_key", type="password")
+        c2.text_input("Client Website URL", key="perf_client_url", placeholder="https://example.com")
 
-        run_clicked = st.button("▶️ Discover URLs & Run Audit", type="primary", use_container_width=True)
+        c3, c4, c5 = st.columns([1.2, 1.2, 0.8])
+        c3.multiselect("Device Strategy", ["mobile", "desktop"], key="perf_strategies")
+        c4.multiselect("Lighthouse Categories", ["performance", "accessibility", "best-practices", "seo"], key="perf_categories")
+        c5.text_input("Locale", key="perf_locale")
 
-    audit_tab, schema_tab = st.tabs(["Performance Audit", "Schema Doc Generator"])
+        with st.expander("Advanced Settings", expanded=False):
+            a1, a2 = st.columns(2)
+            a1.toggle("Include CrUX field-data columns", key="perf_include_field_data")
+            a2.toggle("Use sitemap URLs only (no fallback crawl)", key="perf_sitemap_only")
+            a3, a4, a5 = st.columns(3)
+            a3.slider("Max URLs to audit", min_value=5, max_value=500, step=5, key="perf_max_urls")
+            a4.slider("Request timeout (seconds)", min_value=10, max_value=180, step=5, key="perf_timeout_seconds")
+            a5.slider("Parallel workers", min_value=1, max_value=10, key="perf_max_workers")
+            st.slider("Retries per request", min_value=1, max_value=5, key="perf_retries")
 
-    with audit_tab:
         st.subheader("Report Filters")
-        c1, c2, c3 = st.columns(3)
-        include_pattern = c1.text_input("Include URL regex")
-        exclude_pattern = c2.text_input("Exclude URL regex")
-        min_perf = c3.slider("Minimum performance score", 0, 100, 0)
+        f1, f2, f3 = st.columns(3)
+        f1.text_input("Include URL regex", key="perf_include_pattern")
+        f2.text_input("Exclude URL regex", key="perf_exclude_pattern")
+        f3.slider("Minimum performance score", 0, 100, key="perf_min_perf")
+        run_clicked = st.form_submit_button("▶️ Run Audit", type="primary", use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
+    params = {
+        "api_key": st.session_state["perf_api_key"],
+        "client_url": st.session_state["perf_client_url"],
+        "strategies": st.session_state["perf_strategies"],
+        "categories": st.session_state["perf_categories"],
+        "locale": st.session_state["perf_locale"],
+        "include_field_data": st.session_state["perf_include_field_data"],
+        "sitemap_only": st.session_state["perf_sitemap_only"],
+        "max_urls": st.session_state["perf_max_urls"],
+        "timeout_seconds": st.session_state["perf_timeout_seconds"],
+        "max_workers": st.session_state["perf_max_workers"],
+        "retries": st.session_state["perf_retries"],
+        "include_pattern": st.session_state["perf_include_pattern"],
+        "exclude_pattern": st.session_state["perf_exclude_pattern"],
+        "min_perf": st.session_state["perf_min_perf"],
+    }
+    return run_clicked, params
+
+
+def render_performance_results(filtered: pd.DataFrame, timestamp: str):
+    st.subheader("Audit Summary")
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Rows", len(filtered))
+    k2.metric("Avg Performance", round(filtered["performance_score"].dropna().mean(), 1) if "performance_score" in filtered else "n/a")
+    k3.metric("Errors", int(filtered["error"].notna().sum() if "error" in filtered.columns else 0))
+
+    st.subheader("Audit Results")
+    st.dataframe(filtered, use_container_width=True, height=500)
+
+    st.subheader("Downloads")
+    csv_bytes = filtered.to_csv(index=False).encode("utf-8")
+    json_bytes = filtered.to_json(orient="records", indent=2).encode("utf-8")
+    d1, d2 = st.columns(2)
+    d1.download_button("⬇️ Download CSV report", data=csv_bytes, file_name=f"psi_audit_{timestamp}.csv", mime="text/csv", use_container_width=True)
+    d2.download_button("⬇️ Download JSON report", data=json_bytes, file_name=f"psi_audit_{timestamp}.json", mime="application/json", use_container_width=True)
+
+
+def run_performance_audit_workflow(params: Dict):
+    if not params["strategies"]:
+        st.error("Select at least one strategy.")
+        return
+    if not params["categories"]:
+        st.error("Select at least one category.")
+        return
+
+    try:
+        base_url = normalize_base_url(params["client_url"])
+    except ValueError as err:
+        st.error(str(err))
+        return
+
+    st.info(f"Starting discovery for **{base_url}**")
+    sitemaps = discover_sitemaps(base_url, timeout_seconds=params["timeout_seconds"])
+    all_urls: List[str] = []
+
+    if sitemaps:
+        st.success(f"Discovered {len(sitemaps)} sitemap(s)")
+        with st.expander("View discovered sitemap URLs"):
+            st.write(sitemaps)
+        for sm in sitemaps:
+            all_urls.extend(parse_sitemap_urls(sm, timeout_seconds=params["timeout_seconds"]))
+
+    unique_urls = sorted({u for u in all_urls if u.startswith(("http://", "https://"))})
+    if not unique_urls and not params["sitemap_only"]:
+        st.warning("No sitemap URLs found. Running fallback same-site crawl from homepage.")
+        unique_urls = crawl_fallback_urls(base_url, timeout_seconds=params["timeout_seconds"], max_urls=params["max_urls"])
+    if not unique_urls:
+        st.error("No URLs discovered. Try disabling sitemap-only mode or verify robots/sitemap accessibility.")
+        return
+
+    unique_urls = unique_urls[: params["max_urls"]]
+    st.write(f"URLs queued for audit: **{len(unique_urls)}**")
+
+    config = AuditConfig(
+        api_key=params["api_key"].strip(),
+        strategies=params["strategies"],
+        categories=params["categories"],
+        locale=params["locale"].strip() or "en-US",
+        max_urls=params["max_urls"],
+        timeout_seconds=params["timeout_seconds"],
+        max_workers=params["max_workers"],
+        retries=params["retries"],
+        include_field_data=params["include_field_data"],
+    )
+
+    progress = st.progress(0.0, text="Preparing...")
+    df = run_audit(unique_urls, config, progress)
+    if df.empty:
+        st.error("Audit returned no rows.")
+        return
+
+    filtered = apply_custom_filters(df, params["include_pattern"], params["exclude_pattern"], params["min_perf"])
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    st.session_state["perf_last_filtered"] = filtered
+    st.session_state["perf_last_timestamp"] = timestamp
+    render_performance_results(filtered, timestamp)
+
+
+def render_performance_tab():
+    run_clicked, params = render_performance_controls()
     if run_clicked:
-        if not strategies:
-            st.error("Select at least one strategy.")
-            return
-        if not categories:
-            st.error("Select at least one category.")
-            return
+        run_performance_audit_workflow(params)
+    elif "perf_last_filtered" in st.session_state:
+        render_performance_results(st.session_state["perf_last_filtered"], st.session_state.get("perf_last_timestamp", datetime.utcnow().strftime("%Y%m%d_%H%M%S")))
 
+
+def render_schema_tab():
+    st.subheader("AI Schema Doc Generator")
+    st.caption("Discovers sitemap URLs, generates sanitized JSON-LD per page, and downloads schema/error JSON files in a ZIP.")
+    schema_root = st.text_input("Root website for schema generation", placeholder="https://example.com", key="schema_root")
+    schema_openai_key = st.text_input("OpenAI API Key", value="", type="password", key="schema_key")
+    s1, s2, s3, s4 = st.columns(4)
+    schema_model = s1.text_input("Model", value="gpt-5-mini", key="schema_model")
+    schema_max_urls = s2.number_input("Max URLs", min_value=1, max_value=1000, value=50, step=1, key="schema_max_urls")
+    schema_pause = s3.number_input("Pause between requests (sec)", min_value=0.0, max_value=10.0, value=0.5, step=0.1, key="schema_pause")
+    schema_retries = s4.number_input("Retries per URL", min_value=1, max_value=6, value=3, step=1, key="schema_retries")
+    schema_timeout = st.slider("Request timeout (seconds)", min_value=10, max_value=180, value=60, step=5, key="schema_timeout")
+
+    run_schema = st.button("🧩 Generate Schema JSON ZIP", type="primary", use_container_width=True, key="run_schema")
+    if run_schema:
+        if not schema_openai_key.strip():
+            st.error("OpenAI API key is required. Please paste your key to run schema generation.")
+            return
         try:
-            base_url = normalize_base_url(client_url)
+            normalized_root = normalize_base_url(schema_root)
         except ValueError as err:
             st.error(str(err))
             return
 
-        st.info(f"Starting discovery for **{base_url}**")
+        schema_progress = st.progress(0.0, text="Preparing schema generation...")
+        with st.spinner("Generating schema JSON files. This may take a while for many URLs."):
+            zip_bytes, summary = generate_schema_json_zip(
+                root_site=normalized_root,
+                openai_api_key=schema_openai_key.strip(),
+                model=schema_model.strip() or "gpt-5-mini",
+                timeout_seconds=int(schema_timeout),
+                max_urls=int(schema_max_urls),
+                pause_seconds=float(schema_pause),
+                max_retries=int(schema_retries),
+                progress_placeholder=schema_progress,
+            )
 
-        sitemaps = discover_sitemaps(base_url, timeout_seconds=timeout_seconds)
-        all_urls: List[str] = []
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("URLs Processed", summary["total_urls"])
+        k2.metric("Success", summary["succeeded"])
+        k3.metric("Cached", summary["cached"])
+        k4.metric("Failed", summary["failed"])
 
-        if sitemaps:
-            st.success(f"Discovered {len(sitemaps)} sitemap(s)")
-            with st.expander("View discovered sitemap URLs"):
-                st.write(sitemaps)
-            for sm in sitemaps:
-                all_urls.extend(parse_sitemap_urls(sm, timeout_seconds=timeout_seconds))
-
-        unique_urls = sorted({u for u in all_urls if u.startswith(("http://", "https://"))})
-
-        if not unique_urls and not sitemap_only:
-            st.warning("No sitemap URLs found. Running fallback same-site crawl from homepage.")
-            unique_urls = crawl_fallback_urls(base_url, timeout_seconds=timeout_seconds, max_urls=max_urls)
-
-        if not unique_urls:
-            st.error("No URLs discovered. Try disabling sitemap-only mode or verify robots/sitemap accessibility.")
-            return
-
-        unique_urls = unique_urls[:max_urls]
-        st.write(f"URLs queued for audit: **{len(unique_urls)}**")
-
-        config = AuditConfig(
-            api_key=api_key.strip(),
-            strategies=strategies,
-            categories=categories,
-            locale=locale.strip() or "en-US",
-            max_urls=max_urls,
-            timeout_seconds=timeout_seconds,
-            max_workers=max_workers,
-            retries=retries,
-            include_field_data=include_field_data,
-        )
-
-        progress = st.progress(0.0, text="Preparing...")
-        df = run_audit(unique_urls, config, progress)
-
-        if df.empty:
-            st.error("Audit returned no rows.")
-            return
-
-        filtered = apply_custom_filters(df, include_pattern, exclude_pattern, min_perf)
-
-        k1, k2, k3 = st.columns(3)
-        k1.metric("Rows", len(filtered))
-        k2.metric("Avg Performance", round(filtered["performance_score"].dropna().mean(), 1) if "performance_score" in filtered else "n/a")
-        k3.metric("Errors", int(filtered["error"].notna().sum() if "error" in filtered.columns else 0))
-
-        st.dataframe(filtered, use_container_width=True, height=500)
-
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        csv_bytes = filtered.to_csv(index=False).encode("utf-8")
-        json_bytes = filtered.to_json(orient="records", indent=2).encode("utf-8")
-
-        d1, d2 = st.columns(2)
-        d1.download_button(
-            "⬇️ Download CSV report",
-            data=csv_bytes,
-            file_name=f"psi_audit_{timestamp}.csv",
-            mime="text/csv",
-            use_container_width=True,
-        )
-        d2.download_button(
-            "⬇️ Download JSON report",
-            data=json_bytes,
-            file_name=f"psi_audit_{timestamp}.json",
-            mime="application/json",
+        stamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        st.download_button(
+            "⬇️ Download schema_json.zip",
+            data=zip_bytes,
+            file_name=f"schema_json_{stamp}.zip",
+            mime="application/zip",
             use_container_width=True,
         )
 
@@ -1002,6 +1051,19 @@ def render():
                 mime="application/zip",
                 use_container_width=True,
             )
+
+
+def render():
+    st.set_page_config(page_title="Performance Audit Studio", page_icon="🚀", layout="wide")
+    apply_base_styles()
+    init_ui_state()
+    render_header()
+
+    performance_tab, schema_tab = st.tabs(["Performance Audit", "Schema Doc Generator"])
+    with performance_tab:
+        render_performance_tab()
+    with schema_tab:
+        render_schema_tab()
 
 
 if __name__ == "__main__":
